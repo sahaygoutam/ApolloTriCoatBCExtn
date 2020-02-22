@@ -7,6 +7,43 @@ table 50106 "Indent Line"
         field(1; "Document No."; Code[20])
         {
             DataClassification = ToBeClassified;
+            trigger OnValidate()
+            begin
+                IF Type = Type::" " THEN
+                    ERROR('First select type');
+                IF Type = Type::Item THEN BEGIN
+                    //>>
+                    IndentLine1.RESET;
+                    IndentLine1.SETRANGE(IndentLine1."Document No.", "Document No.");
+                    IndentLine1.SETRANGE("No.", "No.");
+                    IF IndentLine1.FINDFIRST THEN
+                        ERROR(STRSUBSTNO('Item %1 can not be used again', "No."));
+                    //<<
+
+                    Item.GET("No.");
+                    Description := Item.Description;
+                    "Item Category Code" := Item."Item Category Code";
+                    Width := Item.Width;
+                    Thickness := Item.Thickness;
+                    "Unit of Measure Code" := Item."Base Unit of Measure";
+                    "Approx Cost" := Item."Last Direct Cost";
+                    IF "Item Category Code" = 'CA' THEN
+                        "Capital Items" := TRUE
+                    ELSE
+                        "Capital Items" := FALSE;
+                END ELSE
+                    IF Type = Type::"Fixed Asset" THEN BEGIN
+                        FA.GET("No.");
+                        Description := FA.Description;
+                        "Capital Items" := TRUE;
+                    END;
+                TESTFIELD(Status, Status::Open);
+
+                IndentHeader1.GET("Document No.");
+                "Indent Date" := IndentHeader1."Indent Date";
+                IF Type = Type::Item THEN
+                    CodeunitIL.CalculateStockInv(Rec);
+            end;
         }
         field(2; "Line No."; Integer)
         {
@@ -65,6 +102,13 @@ table 50106 "Indent Line"
         field(15; Location; Code[20])
         {
             DataClassification = ToBeClassified;
+            trigger OnValidate()
+            begin
+                TESTFIELD(Status, Status::Open);
+                TESTFIELD("No.");
+                Indentheader.GET("Document No.");
+                Indentheader.TESTFIELD(Indentheader.Status, Indentheader.Status::Open);
+            end;
         }
         field(16; "Vendor Exist"; Integer)
         {
@@ -111,6 +155,15 @@ table 50106 "Indent Line"
         field(26; "Due Date"; Date)
         {
             DataClassification = ToBeClassified;
+            trigger OnValidate()
+            begin
+                IndentHeader.RESET;
+                IndentHeader.SETRANGE("Indent No.", "Document No.");
+                IF IndentHeader.FINDFIRST THEN BEGIN
+                    IF "Due Date" < IndentHeader."Indent Date" THEN
+                        ERROR('Due Date cannot be less than Indent Date');
+                END;
+            end;
         }
         field(27; "Approx Cost"; Decimal)
         {
@@ -147,6 +200,13 @@ table 50106 "Indent Line"
         field(35; "From Location"; Code[20])
         {
             DataClassification = ToBeClassified;
+            trigger OnValidate()
+            begin
+                TESTFIELD(Status, Status::Open);
+                TESTFIELD("No.");
+                Indentheader.GET("Document No.");
+                Indentheader.TESTFIELD(Indentheader.Status, Indentheader.Status::Open);
+            end;
         }
         field(36; "Chicks Item"; Boolean)
         {
@@ -201,26 +261,29 @@ table 50106 "Indent Line"
     }
 
     var
-        myInt: Integer;
+        Item: Record Item;
+        Vendor: Record Vendor;
+        Usersetup: Record "User Setup";
+        IndentHeader: Record "Indent Header";
+        ILE: Record "Item Ledger Entry";
+        SafetyStock: Decimal;
+        QtyonPurchOrder: Decimal;
+        QtyOnProdOrder: Decimal;
+        "Lead Time": DateFormula;
+        FA: Record "Fixed Asset";
+        IndentLine: Record "RGP/NRGP Header";
+        IndentHeader1: Record "Indent Header";
+        userset: Record "User Setup";
+        CodeunitIL: Codeunit "Issue Slip validate";
+        IndentLine1: Record "Indent Line";
 
     trigger OnInsert()
     begin
-
+        IndentLine1.RESET;
+        IndentLine1.SETRANGE(IndentLine1."Document No.", "Document No.");
+        IndentLine1.SETRANGE(IndentLine1.Type, IndentLine1.Type::Item);
+        IndentLine1.SETRANGE("No.", "No.");
+        IF IndentLine1.FINDFIRST THEN
+            ERROR(STRSUBSTNO('Item %1 can not be used again', "No."));
     end;
-
-    trigger OnModify()
-    begin
-
-    end;
-
-    trigger OnDelete()
-    begin
-
-    end;
-
-    trigger OnRename()
-    begin
-
-    end;
-
 }

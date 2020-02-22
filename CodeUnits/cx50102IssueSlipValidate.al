@@ -86,187 +86,172 @@ Codeunit 50102 "Issue Slip validate"
     BEGIN
     END;
 
-    // PROCEDURE CalculateStockInv(PeraIndentLine : Record 50006);
-    // VAR
-    //   IndentHeader@1000000002 : Record 50005;
-    //   ILE@1000000001 : Record 32;
-    // BEGIN
-    //   //PRU-VR1.00
-    //   PeraIndentLine."Stock In Hand":=0;
-    //   IF (PeraIndentLine."No." <> '') THEN BEGIN
-    //     Item.RESET;
-    //     Item.SETRANGE("No.",PeraIndentLine."No.");
-    //     IF Item.FINDFIRST THEN
-    //     IF PeraIndentLine.Location <> '' THEN
-    //       IndentHeader.RESET;
-    //       IndentHeader.SETRANGE("Indent No.",PeraIndentLine."Document No.");
-    //       IF IndentHeader.FINDFIRST THEN
-    //           ILE.RESET;
-    //           ILE.SETRANGE("Item No.",Item."No.");
-    //           ILE.SETRANGE("Location Code",PeraIndentLine.Location); //RK-PRU
-    //           IF ILE.FINDSET THEN BEGIN
-    //             REPEAT
-    //             PeraIndentLine."Stock In Hand" += ILE.Quantity;
-    //             UNTIL ILE.NEXT =0;
-    //           END;
-    //   END;
-    //   //PRU-VR1.00
-    // END;
+    PROCEDURE CalculateStockInv(PeraIndentLine: Record "Indent Line")
+    VAR
+        IndentHeader: Record "Indent Header";
+        ILE: Record "Item Ledger Entry";
+    BEGIN
+        PeraIndentLine."Stock In Hand" := 0;
+        IF (PeraIndentLine."No." <> '') THEN BEGIN
+            Item.RESET;
+            Item.SETRANGE("No.", PeraIndentLine."No.");
+            IF Item.FINDFIRST THEN
+                IF PeraIndentLine.Location <> '' THEN
+                    IndentHeader.RESET;
+            IndentHeader.SETRANGE("Indent No.", PeraIndentLine."Document No.");
+            IF IndentHeader.FINDFIRST THEN
+                ILE.RESET;
+            ILE.SETRANGE("Item No.", Item."No.");
+            ILE.SETRANGE("Location Code", PeraIndentLine.Location); //RK-PRU
+            IF ILE.FINDSET THEN BEGIN
+                REPEAT
+                    PeraIndentLine."Stock In Hand" += ILE.Quantity;
+                UNTIL ILE.NEXT = 0;
+            END;
+        END;
+    END;
 
-    // PROCEDURE CloseIndent@1000000005(PeraIH@1000000000 : Record 50005);
-    // VAR
-    //   IndentLine@1000000001 : Record 50006;
-    //   IndentLine1@1000000002 : Record 50006;
-    // BEGIN
-    //   IF PeraIH."Released Status"=PeraIH."Released Status"::Close THEN
-    //     ERROR('Document is already closed');
-    //   IndentLine.RESET;
-    //   IndentLine.SETRANGE("Document No.",PeraIH."Indent No.");
-    //   IF IndentLine.FINDFIRST THEN BEGIN
-    //     IndentLine1.RESET;
-    //     IndentLine1.SETRANGE("Document No.",PeraIH."Indent No.");
-    //     IndentLine1.FINDSET;
-    //     IndentLine1.MODIFYALL("Released Status",IndentLine1."Released Status"::Close);
-    //     PeraIH."Released Status" := PeraIH."Released Status"::Close;
-    //     PeraIH.MODIFY;
-    //   END;
-    // END;
+    PROCEDURE CloseIndent(PeraIH: Record "Indent Header");
+    VAR
+        IndentLine: Record "Indent Line";
+        IndentLine1: Record "Indent Line";
+    BEGIN
+        IF PeraIH."Released Status" = PeraIH."Released Status"::Close THEN
+            ERROR('Document is already closed');
+        IndentLine.RESET;
+        IndentLine.SETRANGE("Document No.", PeraIH."Indent No.");
+        IF IndentLine.FINDFIRST THEN BEGIN
+            IndentLine1.RESET;
+            IndentLine1.SETRANGE("Document No.", PeraIH."Indent No.");
+            IndentLine1.FINDSET;
+            IndentLine1.MODIFYALL("Released Status", IndentLine1."Released Status"::Close);
+            PeraIH."Released Status" := PeraIH."Released Status"::Close;
+            PeraIH.MODIFY;
+        END;
+    END;
 
-    // PROCEDURE "Re-OpenIndent"@1000000006(PeraIH@1000000000 : Record 50005);
-    // VAR
-    //   Text50000@1000000001 : TextConst 'ENU=Do you want to Re-open the Indent';
-    //   IndentLine1@1000000002 : Record 50006;
-    // BEGIN
-    //   PeraIH.TESTFIELD("Approval Status",PeraIH."Approval Status"::Approved);
-    //   UserSetup.GET(USERID);
-    //     BEGIN
-    //       IF CONFIRM(Text50000,FALSE,PeraIH."Indent No.") THEN
-    //         BEGIN
-    //           IndentLine1.RESET;
-    //           IndentLine1.SETRANGE("Document No.",PeraIH."Indent No.");
-    //           IndentLine1.SETRANGE("Approval Status",IndentLine1."Approval Status"::Approved);
-    //           IF IndentLine1.FINDSET(TRUE,FALSE) THEN BEGIN
-    //             IndentLine1.MODIFYALL("Approval Status",IndentLine1."Approval Status"::Open);
-    //             PeraIH."Approval Status" :=PeraIH."Approval Status"::Open;
-    //             PeraIH.MODIFY;
-    //           END;
-    //         END;
-    //    END;
-    // END;
+    PROCEDURE "Re-OpenIndent"(PeraIH: Record "Indent Header");
+    VAR
+        Text50000: TextConst ENU = 'Do you want to Re-open the Indent';
+        IndentLine1: Record "Indent Line";
+    BEGIN
+        PeraIH.TESTFIELD("Approval Status", PeraIH."Approval Status"::Approved);
+        UserSetup.GET(USERID);
+        BEGIN
+            IF CONFIRM(Text50000, FALSE, PeraIH."Indent No.") THEN BEGIN
+                IndentLine1.RESET;
+                IndentLine1.SETRANGE("Document No.", PeraIH."Indent No.");
+                IndentLine1.SETRANGE("Approval Status", IndentLine1."Approval Status"::Approved);
+                IF IndentLine1.FINDSET(TRUE, FALSE) THEN BEGIN
+                    IndentLine1.MODIFYALL("Approval Status", IndentLine1."Approval Status"::Open);
+                    PeraIH."Approval Status" := PeraIH."Approval Status"::Open;
+                    PeraIH.MODIFY;
+                END;
+            END;
+        END;
+    END;
 
-    // PROCEDURE ApproveIndentLines@1000000007(PeraIH@1000000006 : Record 50005);
-    // VAR
-    //   IndentLine_Loc@1000000000 : Record 50006;
-    //   RecLocation@1000000005 : Record 14;
-    //   TotalRemainingQty@1000000004 : Decimal;
-    //   IndentLineQty@1000000003 : Decimal;
-    //   TotalRemainingQty1@1000000002 : Decimal;
-    //   ILE@1000000001 : Record 32;
-    //   IndentLine@1000000007 : Record 50006;
-    //   Text50004@1000000008 : TextConst 'ENU=You do not have permission to approve the Indent line.';
-    // BEGIN
-    //   CLEAR(TotalRemainingQty);
-    //   CLEAR(IndentLineQty);
-    //   CLEAR(TotalRemainingQty1);
+    PROCEDURE ApproveIndentLines(PeraIH: Record "Indent Header");
+    VAR
+        IndentLine_Loc: Record "Indent Line";
+        RecLocation: Record Location;
+        TotalRemainingQty: Decimal;
+        IndentLineQty: Decimal;
+        TotalRemainingQty1: Decimal;
+        ILE: Record "Item Ledger Entry";
+        IndentLine: Record "Indent Line";
+        Text50004: TextConst ENU = 'You do not have permission to approve the Indent line.';
+    BEGIN
+        CLEAR(TotalRemainingQty);
+        CLEAR(IndentLineQty);
+        CLEAR(TotalRemainingQty1);
 
-    //   IndentLine.RESET;
-    //   IndentLine.SETRANGE("Document No.",PeraIH."Indent No.");
-    //   //IndentLine.SETFILTER("Chicks Item",'%1',TRUE);
-    //   IF IndentLine.FINDFIRST THEN
-    //     REPEAT
-    //      IndentLineQty+=IndentLine.Quantity;
-    //     UNTIL IndentLine.NEXT=0;
+        IndentLine.RESET;
+        IndentLine.SETRANGE("Document No.", PeraIH."Indent No.");
+        IF IndentLine.FINDFIRST THEN
+            REPEAT
+                IndentLineQty += IndentLine.Quantity;
+            UNTIL IndentLine.NEXT = 0;
 
-    //   ILE.RESET;
-    //   ILE.SETRANGE("Location Code",PeraIH."Required Location");
-    //   ILE.SETRANGE("Item No.",IndentLine."No.");
-    //   ILE.SETFILTER("Remaining Quantity",'>%1',0);
-    //   IF ILE.FINDSET THEN BEGIN
-    //   ILE.CALCSUMS("Remaining Quantity");
-    //     TotalRemainingQty := ILE."Remaining Quantity";
-    //   //TotalRemainingQty:=RecLocation.Capicity-ILE."Remaining Quantity"; Pru_gk
-    //   //IF RecLocation.Capicity>0 THEN  ///Pru_gk
-    //     IF TotalRemainingQty < IndentLineQty THEN
-    //       ERROR('Qty must not be greater than %1',TotalRemainingQty);
-    //   END;
-    //   //-RK-PRU
+        ILE.RESET;
+        ILE.SETRANGE("Location Code", PeraIH."Required Location");
+        ILE.SETRANGE("Item No.", IndentLine."No.");
+        ILE.SETFILTER("Remaining Quantity", '>%1', 0);
+        IF ILE.FINDSET THEN BEGIN
+            ILE.CALCSUMS("Remaining Quantity");
+            TotalRemainingQty := ILE."Remaining Quantity";
+            IF TotalRemainingQty < IndentLineQty THEN
+                ERROR('Qty must not be greater than %1', TotalRemainingQty);
+        END;
+        IF UserSetup.GET(USERID) THEN;
+        IF PeraIH."Approval Status" = PeraIH."Approval Status"::Closed THEN
+            ERROR('Approval Status must be open');
+        IF NOT UserSetup."Allow Indent Line Approval" THEN
+            ERROR(Text50004);
+        IF UserSetup."Allow Indent Line Approval" THEN BEGIN
+            IndentLine_Loc.RESET;
+            IndentLine_Loc.SETRANGE("Document No.", PeraIH."Indent No.");
+            IndentLine_Loc.SETFILTER("Approval Status", '%1|%2', IndentLine_Loc."Approval Status"::Open, IndentLine_Loc."Approval Status"::"Pending Approval");
+            IF IndentLine_Loc.FINDFIRST THEN
+                REPEAT
+                    IndentLine_Loc.TESTFIELD(Quantity);
+                UNTIL IndentLine_Loc.NEXT = 0;
+            IndentLine_Loc.RESET;
+            IndentLine_Loc.SETRANGE("Document No.", PeraIH."Indent No.");
+            IndentLine_Loc.SETFILTER("Approval Status", '%1|%2', IndentLine_Loc."Approval Status"::Open, IndentLine_Loc."Approval Status"::"Pending Approval");
+            IF IndentLine_Loc.FINDFIRST THEN BEGIN
+                REPEAT
+                    IndentLine_Loc."Approval Status" := IndentLine_Loc."Approval Status"::Approved;
+                    IndentLine_Loc."Approval User ID" := USERID;
+                    IndentLine_Loc."Approved Date" := WORKDATE;
+                    IndentLine_Loc.MODIFY;
+                UNTIL IndentLine_Loc.NEXT = 0;
+                PeraIH."Approval Status" := PeraIH."Approval Status"::Approved;
+                PeraIH."Approval User ID" := USERID;
+                PeraIH.MODIFY;
+            END;
+        END;
+    END;
 
-    //   IF UserSetup.GET(USERID) THEN;
-    //   //PeraIH.TESTFIELD("Required Location");
-    //   IF PeraIH."Approval Status" =PeraIH."Approval Status"::Closed THEN
-    //     ERROR('Approval Status must be open');
-    //   IF NOT UserSetup."Allow Indent Line Approval" THEN
-    //     ERROR(Text50004);
-    //   IF UserSetup."Allow Indent Line Approval" THEN BEGIN
-    //     IndentLine_Loc.RESET;
-    //     IndentLine_Loc.SETRANGE("Document No.",PeraIH."Indent No.");
-    //     //IndentLine_Loc.SETRANGE("Approval Status",IndentLine_Loc."Approval Status"::Open);
-    //     IndentLine_Loc.SETFILTER("Approval Status",'%1|%2',IndentLine_Loc."Approval Status"::Open,IndentLine_Loc."Approval Status"::"Pending Approval");
-    //     IF IndentLine_Loc.FINDFIRST THEN
-    //     REPEAT
-    //       IndentLine_Loc.TESTFIELD(Quantity);
-    //     UNTIL IndentLine_Loc.NEXT=0;
-    //     IndentLine_Loc.RESET;
-    //     IndentLine_Loc.SETRANGE("Document No.",PeraIH."Indent No.");
-    //     //IndentLine_Loc.SETRANGE("Approval Status",IndentLine_Loc."Approval Status"::Open);
-    //     IndentLine_Loc.SETFILTER("Approval Status",'%1|%2',IndentLine_Loc."Approval Status"::Open,IndentLine_Loc."Approval Status"::"Pending Approval");
-    //     IF IndentLine_Loc.FINDFIRST THEN BEGIN
-    //     REPEAT
-    //       IndentLine_Loc."Approval Status":=IndentLine_Loc."Approval Status"::Approved;
-    //       IndentLine_Loc."Approval User ID" := USERID;
-    //       IndentLine_Loc."Approved Date" := WORKDATE;
-    //       IndentLine_Loc.MODIFY;
-    //     UNTIL IndentLine_Loc.NEXT=0;
-    //       PeraIH."Approval Status" := PeraIH."Approval Status"::Approved;
-    //       PeraIH."Approval User ID" := USERID;
-    //       PeraIH.MODIFY;
-    //     END;
-    //   END;
-    // END;
+    PROCEDURE SendApprovalRequest(PeraIH: Record "Indent Header");
+    VAR
+        RecordLink: Record "Record Link";
+        T83: Record "Item Journal Line";
+        IndentHeader: Record "Indent Header";
+        IndentLine: Record "Indent Line";
+    BEGIN
+        UserSetup.GET(USERID);
 
-    // PROCEDURE SendApprovalRequest@1000000008(PeraIH@1000000000 : Record 50005);
-    // VAR
-    //   RecordLink@1000000002 : Record 2000000068;
-    //   T83@1000000001 : Record 83;
-    //   IndentHeader@1000000003 : Record 50005;
-    //   IndentLine@1000000004 : Record 50006;
-    // BEGIN
-    //   UserSetup.GET(USERID);
-
-    //   IF NOT UserSetup."Allow Indent Line Approval" THEN BEGIN
-    //     PeraIH.TESTFIELD("Assigned User ID");
-    //     RecordLink.INIT;
-    //     RecordLink."Link ID" := GetLastLinkNo;
-    //     IndentHeader.GET(PeraIH."Indent No.");
-    //     RecordLink.URL1 := GETURL(CURRENTCLIENTTYPE,COMPANYNAME,OBJECTTYPE::Page,50004,IndentHeader);
-    //     RecordLink.Description := 'Indent Order - '+ PeraIH."Indent No.";
-    //     RecordLink.Type := RecordLink.Type::Note;
-    //     RecordLink.Created := CURRENTDATETIME;
-    //     RecordLink."User ID" := USERID;
-    //     RecordLink.Company := COMPANYNAME;
-    //     RecordLink.Notify := TRUE;
-    //     RecordLink."To User ID" := PeraIH."Assigned User ID";
-    //     RecordLink.INSERT;
-    //     PeraIH."Approval Status" := PeraIH."Approval Status"::"Pending Approval";
-    //     IndentLine.RESET;
-    //     IndentLine.SETRANGE("Document No.",PeraIH."Indent No.");
-    //     IF IndentLine.FINDFIRST THEN BEGIN
-    //       //IndentLine."Approval Status" := IndentLine."Approval Status"::"Pending Approval";
-    //       IndentLine.MODIFYALL(IndentLine."Approval Status",IndentLine."Approval Status"::"Pending Approval");
-    //     END;
-    //     //CurrPage.SAVERECORD;
-    //   END;
-    //   IF UserSetup."Allow Indent Line Approval" THEN BEGIN
-    //     PeraIH."Approval Status" := PeraIH."Approval Status"::Approved;
-    //     IndentLine.RESET;
-    //     IndentLine.SETRANGE("Document No.",PeraIH."Indent No.");
-    //     IF IndentLine.FINDFIRST THEN BEGIN
-    //       //IndentLine."Approval Status" := IndentLine."Approval Status"::"Pending Approval";
-    //       IndentLine.MODIFYALL(IndentLine."Approval Status",IndentLine."Approval Status"::Approved);
-    //     END;
-    //     //CurrPage.SAVERECORD;
-    //   END;
-    // END;
+        IF NOT UserSetup."Allow Indent Line Approval" THEN BEGIN
+            PeraIH.TESTFIELD("Assigned User ID");
+            RecordLink.INIT;
+            RecordLink."Link ID" := GetLastLinkNo;
+            IndentHeader.GET(PeraIH."Indent No.");
+            RecordLink.URL1 := GETURL(CURRENTCLIENTTYPE, COMPANYNAME, OBJECTTYPE::Page, 50004, IndentHeader);
+            RecordLink.Description := 'Indent Order - ' + PeraIH."Indent No.";
+            RecordLink.Type := RecordLink.Type::Note;
+            RecordLink.Created := CURRENTDATETIME;
+            RecordLink."User ID" := USERID;
+            RecordLink.Company := COMPANYNAME;
+            RecordLink.Notify := TRUE;
+            RecordLink."To User ID" := PeraIH."Assigned User ID";
+            RecordLink.INSERT;
+            PeraIH."Approval Status" := PeraIH."Approval Status"::"Pending Approval";
+            IndentLine.RESET;
+            IndentLine.SETRANGE("Document No.", PeraIH."Indent No.");
+            IF IndentLine.FINDFIRST THEN BEGIN
+                IndentLine.MODIFYALL(IndentLine."Approval Status", IndentLine."Approval Status"::"Pending Approval");
+            END;
+        END;
+        IF UserSetup."Allow Indent Line Approval" THEN BEGIN
+            PeraIH."Approval Status" := PeraIH."Approval Status"::Approved;
+            IndentLine.RESET;
+            IndentLine.SETRANGE("Document No.", PeraIH."Indent No.");
+            IF IndentLine.FINDFIRST THEN BEGIN
+                IndentLine.MODIFYALL(IndentLine."Approval Status", IndentLine."Approval Status"::Approved);
+            END;
+        END;
+    END;
 
     LOCAL PROCEDURE GetLastLinkNo(): Integer;
     VAR
