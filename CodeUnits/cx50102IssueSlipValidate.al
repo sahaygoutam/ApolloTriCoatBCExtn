@@ -9,7 +9,7 @@ Codeunit 50102 "Issue Slip validate"
         DimMgt: Codeunit DimensionManagement;
         Item: Record Item;
         Vendor: Record Vendor;
-        //IndentLine:	Record	"Indent Line";
+        IndentLine: Record "Indent Line";
         LeadTime: DateFormula;
         "Purchase Period": DateFormula;
         "Safety Stock Period": DateFormula;
@@ -264,134 +264,80 @@ Codeunit 50102 "Issue Slip validate"
             EXIT(1);
     END;
 
-    // PROCEDURE IssueIndent@1000000009(PeraIH@1000000000 : Record 50005);
-    // VAR
-    //   IssueSlipvalidate@1000000001 : Codeunit 50002;
-    // BEGIN
-    //   IF PeraIH."Approval Status"=PeraIH."Approval Status"::Issued THEN
-    //     ERROR('Document is already Issued');
-    //   IndentLine.RESET;
-    //   IndentLine.SETRANGE("Document No.",PeraIH."Indent No.");
-    //   IF IndentLine.FINDFIRST THEN BEGIN REPEAT
-    //     PeraIH.TESTFIELD("From Location");
-    //     PeraIH.TESTFIELD("Required Location");
-    //     PostItemReclassJnl(IndentLine);
-    //     IndentLine."Approval Status" := IndentLine."Approval Status"::Issued;
-    //     IndentLine.MODIFY;
-    //   UNTIL IndentLine.NEXT=0;
-    //     PeraIH."Approval Status" := PeraIH."Approval Status"::Issued;
-    //    // CurrPage.SAVERECORD;
-    //   END;
-    // END;
+    PROCEDURE IssueIndent(PeraIH: Record "Indent Header");
+    BEGIN
+        IF PeraIH."Approval Status" = PeraIH."Approval Status"::Issued THEN
+            ERROR('Document is already Issued');
+        IndentLine.RESET;
+        IndentLine.SETRANGE("Document No.", PeraIH."Indent No.");
+        IF IndentLine.FINDFIRST THEN BEGIN
+            REPEAT
+                PeraIH.TESTFIELD("From Location");
+                PeraIH.TESTFIELD("Required Location");
+                PostItemReclassJnl(IndentLine);
+                IndentLine."Approval Status" := IndentLine."Approval Status"::Issued;
+                IndentLine.MODIFY;
+            UNTIL IndentLine.NEXT = 0;
+            PeraIH."Approval Status" := PeraIH."Approval Status"::Issued;
+        END;
+    END;
 
-    // PROCEDURE PostItemReclassJnl@1000000013(VAR IndentLineLoc@1000000000 : Record 50006);
-    // VAR
-    //   ItemJournalLine@1000000001 : Record 83;
-    //   ILE@1000000002 : Record 32;
-    //   ReservationEntry@1000000003 : Record 337;
-    //   InvSetup@1000000004 : Record 313;
-    //   ItemJnlPost@1000000005 : Codeunit 241;
-    //   TrackingSpecification@1000000006 : Record 336;
-    //   ItemLoc@1170000000 : Record 27;
-    //   InventorySetup@1170000001 : Record 313;
-    //   ConsIJL@1170000002 : Record 83;
-    //   IndentHeader@1000000007 : Record 50005;
-    //   Cu22@1000000008 : Codeunit 22;
-    // BEGIN
-
-    //   InvSetup.GET;
-    //   //PRU-VG 4.0
-    //   IndentHeader.RESET;
-    //   IndentHeader.SETRANGE("Indent No.",IndentLineLoc."Document No.");
-    //   IF IndentHeader.FINDFIRST THEN
-    //   //InvSetup.TESTFIELD("Indent Batch Name");
-    //   ItemJournalLine.INIT;
-    //   ItemJournalLine."Journal Template Name" := 'RECLASS';
-    //   ItemJournalLine."Journal Batch Name" := 'DEFAULT';
-    //   ItemJournalLine."Line No." := GetLineNoIssue('RECLASS',InvSetup."Indent Batch Name");//Pru_gk
-    //   ItemJournalLine."Document No." := IndentHeader."Indent No.";
-    //   ItemJournalLine."Entry Type" := ItemJournalLine."Entry Type"::Transfer;
-    //   ItemJournalLine.VALIDATE("Item No.",IndentLineLoc."No.");
-    //   //ItemJournalLine.VALIDATE("Variant Code",IndentLine."Variant Code");
-    //   ItemJournalLine."Posting Date" := WORKDATE;
-    //   ItemJournalLine.VALIDATE("Location Code",IndentHeader."From Location");
-    //   ItemJournalLine.VALIDATE(Quantity,IndentLineLoc.Quantity);
-    //   ItemJournalLine.VALIDATE("Unit of Measure Code",IndentLineLoc."Unit of Measure Code");
-    //   ItemJournalLine.VALIDATE("New Location Code",IndentHeader."Required Location");
-    //   ItemJournalLine.VALIDATE("Shortcut Dimension 1 Code",IndentHeader."Shortcut Dimension 1 Code");
-    //   ItemJournalLine.VALIDATE("New Shortcut Dimension 1 Code",IndentHeader."Shortcut Dimension 1 Code");
-    //   {TrackingSpecification.RESET;
-    //   TrackingSpecification.SETRANGE("Item No.",IssueLine."Item Code");
-    //   TrackingSpecification.SETRANGE("Location Code",IssueLine."From Location");
-    //   TrackingSpecification.SETRANGE("Quantity (Base)",IssueLine."Issue Qty");
-    //   IF TrackingSpecification.FINDLAST THEN BEGIN
-    //     ItemJournalLine.VALIDATE("Serial No.",TrackingSpecification."Serial No.");
-    //     //MESSAGE('%1',ItemJournalLine."Serial No.")
-    //   END;}
-    //   //PRU_RPG ItemJournalLine.INSERT;
-    //   ReservationEntry.RESET;
-    //   ReservationEntry.SETRANGE("Item No.",IndentLineLoc."No.");
-    //   ReservationEntry.SETRANGE("Location Code",IndentHeader."From Location");
-    //   ReservationEntry.SETRANGE("Source ID",'RECLASS');
-    //   //ReservationEntry.SETRANGE("Source Batch Name",);Pru_gk
-    //   IF ReservationEntry.FINDFIRST THEN REPEAT
-    //     ItemJournalLine.VALIDATE("Lot No.",TrackingSpecification."Lot No.");
-    //     ReservationEntry."Source Ref. No." := ItemJournalLine."Line No.";
-    //     ReservationEntry.MODIFY;
-    //   UNTIL ReservationEntry.NEXT =0;
-
-    //   {
-    //   ILE.RESET;
-    //   ILE.SETRANGE("Document No.",RcptLinePurch."Document No.");
-    //   ILE.SETRANGE(ILE."Rejected For Item Tracking",TRUE);
-    //   ILE.SETRANGE(ILE."Item No.",RcptLinePurch."No.");
-    //   ILE.SETFILTER("Serial No.",'<>%1','');
-    //   IF ILE.FINDFIRST THEN
-    //   REPEAT
-    //     ReservationEntry.INIT;
-    //     ReservationEntry."Entry No." := GetLastEntryNo;
-    //     ReservationEntry."Item No." := ILE."Item No.";
-    //     ReservationEntry."Location Code" := ILE."Location Code";
-    //     ReservationEntry."Quantity (Base)" := -1;
-    //     =Re=servationEntry."Reservation Status" := ReservationEntry."Reservation Status"::Prospect;
-    //     ReservationEntry."Creation Date" := WORKDATE;
-    //     ReservationEntry."Source Type" := 83;
-    //     ReservationEntry."Source Subtype" := 4;
-    //     ReservationEntry."Source ID" := 'RECLASS';
-    //     ReservationEntry."Source Batch Name" := InvSetup."Rejected Location Batch";
-    //     ReservationEntry."Source Ref. No." := ItemJournalLine."Line No.";
-    //     ReservationEntry."Serial No." := ILE."Serial No.";
-    //     ReservationEntry."Created By" := USERID;
-    //     ReservationEntry."Qty. per Unit of Measure" := 1;
-    //     ReservationEntry.Quantity := -1;
-    //     ReservationEntry.Positive := FALSE;
-    //     ReservationEntry."Qty. to Handle (Base)" := -1;
-    //     ReservationEntry."Qty. to Invoice (Base)" := -1;
-    //     ReservationEntry."New Serial No." := ILE."Serial No.";
-    //     ReservationEntry."Item Tracking" := ReservationEntry."Item Tracking" ::"Serial No.";
-    //     ReservationEntry.INSERT;
-    //   UNTIL ILE.NEXT=0;
-    //   }
-    //   //PRU-VG 4.0
-    //   //ItemJnlPost.RunDirectly(ItemJournalLine);
-    //   //Cu22.RunWithCheck(ItemJournalLine);
-    //   //CODEUNIT.RUN(CODEUNIT::"Item Jnl.-Post Line",ItemJournalLine);
-    //   IF ItemLoc.GET(IndentLineLoc."No.") THEN;
-    //   //IF ItemLoc."Consumption Item" THEN BEGIN
-    //     ConsIJL.INIT;
-    //     ConsIJL."Journal Template Name" := 'Item';
-    //     ConsIJL."Journal Batch Name" := InventorySetup."Auto Consumption Batch Name";
-    //     ConsIJL."Line No." := GetLineNo('Item',InventorySetup."Auto Consumption Batch Name");
-    //     ConsIJL."Posting Date" := WORKDATE;
-    //     ConsIJL.VALIDATE("Document No.",IndentHeader."Indent No.");
-    //     ConsIJL.VALIDATE("Item No.",IndentLineLoc."No.");
-    //     ConsIJL.VALIDATE("Entry Type",ConsIJL."Entry Type"::"Negative Adjmt.");
-    //     ConsIJL.VALIDATE(Quantity,IndentLineLoc.Quantity);
-    //     ConsIJL.VALIDATE("Location Code",IndentHeader."Required Location");
-    //     ConsIJL.VALIDATE("Shortcut Dimension 1 Code",IndentHeader."Shortcut Dimension 1 Code");
-    //     Cu22.RunWithCheck(ConsIJL);
-    //   //END;
-    // END;
+    PROCEDURE PostItemReclassJnl(VAR IndentLineLoc: Record "Indent Line")
+    VAR
+        ItemJournalLine: Record "Item Journal Line";
+        ILE: Record "Item Ledger Entry";
+        ReservationEntry: Record "Reservation Entry";
+        InvSetup: Record "Inventory Setup";
+        ItemJnlPost: Codeunit "Item Jnl.-Post";
+        TrackingSpecification: Record "Tracking Specification";
+        ItemLoc: Record Item;
+        InventorySetup: Record "Inventory Setup";
+        ConsIJL: Record "Item Journal Line";
+        IndentHeader: Record "Indent Header";
+        Cu22: Codeunit "Item Jnl.-Post Line";
+    BEGIN
+        InvSetup.GET;
+        IndentHeader.RESET;
+        IndentHeader.SETRANGE("Indent No.", IndentLineLoc."Document No.");
+        IF IndentHeader.FINDFIRST THEN
+            ItemJournalLine.INIT;
+        ItemJournalLine."Journal Template Name" := 'RECLASS';
+        ItemJournalLine."Journal Batch Name" := 'DEFAULT';
+        ItemJournalLine."Line No." := GetLineNoIssue('RECLASS', InvSetup."Indent Batch Name");
+        ItemJournalLine."Document No." := IndentHeader."Indent No.";
+        ItemJournalLine."Entry Type" := ItemJournalLine."Entry Type"::Transfer;
+        ItemJournalLine.VALIDATE("Item No.", IndentLineLoc."No.");
+        ItemJournalLine."Posting Date" := WORKDATE;
+        ItemJournalLine.VALIDATE("Location Code", IndentHeader."From Location");
+        ItemJournalLine.VALIDATE(Quantity, IndentLineLoc.Quantity);
+        ItemJournalLine.VALIDATE("Unit of Measure Code", IndentLineLoc."Unit of Measure Code");
+        ItemJournalLine.VALIDATE("New Location Code", IndentHeader."Required Location");
+        ItemJournalLine.VALIDATE("Shortcut Dimension 1 Code", IndentHeader."Shortcut Dimension 1 Code");
+        ItemJournalLine.VALIDATE("New Shortcut Dimension 1 Code", IndentHeader."Shortcut Dimension 1 Code");
+        ReservationEntry.RESET;
+        ReservationEntry.SETRANGE("Item No.", IndentLineLoc."No.");
+        ReservationEntry.SETRANGE("Location Code", IndentHeader."From Location");
+        ReservationEntry.SETRANGE("Source ID", 'RECLASS');
+        IF ReservationEntry.FINDFIRST THEN
+            REPEAT
+                ItemJournalLine.VALIDATE("Lot No.", TrackingSpecification."Lot No.");
+                ReservationEntry."Source Ref. No." := ItemJournalLine."Line No.";
+                ReservationEntry.MODIFY;
+            UNTIL ReservationEntry.NEXT = 0;
+        IF ItemLoc.GET(IndentLineLoc."No.") THEN;
+        ConsIJL.INIT;
+        ConsIJL."Journal Template Name" := 'Item';
+        ConsIJL."Journal Batch Name" := InventorySetup."Auto Consumption Batch Name";
+        ConsIJL."Line No." := GetLineNo('Item', InventorySetup."Auto Consumption Batch Name");
+        ConsIJL."Posting Date" := WORKDATE;
+        ConsIJL.VALIDATE("Document No.", IndentHeader."Indent No.");
+        ConsIJL.VALIDATE("Item No.", IndentLineLoc."No.");
+        ConsIJL.VALIDATE("Entry Type", ConsIJL."Entry Type"::"Negative Adjmt.");
+        ConsIJL.VALIDATE(Quantity, IndentLineLoc.Quantity);
+        ConsIJL.VALIDATE("Location Code", IndentHeader."Required Location");
+        ConsIJL.VALIDATE("Shortcut Dimension 1 Code", IndentHeader."Shortcut Dimension 1 Code");
+        Cu22.RunWithCheck(ConsIJL);
+    END;
 
     PROCEDURE GetLineNo(ParaTemplate: Code[20]; ParaBatch: Code[20]): Integer;
     VAR
@@ -406,41 +352,39 @@ Codeunit 50102 "Issue Slip validate"
             EXIT(10);
     END;
 
-    // PROCEDURE CalculateInv(PeraIL : Record 50006);
-    // VAR
-    //   SafetyStock@1000000001 : Decimal;
-    //   QtyonPurchOrder@1000000002 : Decimal;
-    //   QtyOnProdOrder@1000000003 : Decimal;
-    // BEGIN
-    //   //PRU-VR1.00
-    //   IF (PeraIL."No." <> '') THEN BEGIN
-    //     Item.RESET;
-    //     Item.SETRANGE("No.",PeraIL."No.");
-    //     IF PeraIL.Location <> '' THEN
-    //       Item.SETRANGE("Location Filter",PeraIL.Location);
-    //       Item.FINDFIRST;
-    //      SafetyStock := Item."Safety Stock Quantity" ;
+    PROCEDURE CalculateInv(PeraIL: Record "Indent Line");
+    VAR
+        SafetyStock: Decimal;
+        QtyonPurchOrder: Decimal;
+        QtyOnProdOrder: Decimal;
+    BEGIN
+        IF (PeraIL."No." <> '') THEN BEGIN
+            Item.RESET;
+            Item.SETRANGE("No.", PeraIL."No.");
+            IF PeraIL.Location <> '' THEN
+                Item.SETRANGE("Location Filter", PeraIL.Location);
+            Item.FINDFIRST;
+            SafetyStock := Item."Safety Stock Quantity";
 
-    //     IF Item.CALCFIELDS(Item."Qty. on Purch. Order") THEN
-    //       QtyonPurchOrder := Item."Qty. on Purch. Order"
-    //     ELSE
-    //       QtyonPurchOrder :=0;
-    //     IF Item.CALCFIELDS(Item."Qty. on Prod. Order") THEN
-    //       QtyOnProdOrder := Item."Qty. on Prod. Order"
-    //     ELSE
-    //       QtyOnProdOrder := 0;
-    //       LeadTime := Item."Lead Time Calculation";
-    //   END
-    //     ELSE BEGIN
-    //      SafetyStock := 0;
-    //      QtyonPurchOrder :=0;
-    //      QtyOnProdOrder := 0;
-    //      CLEAR("Purchase Period");
-    //      CLEAR("Safety Stock Period");
-    //      CLEAR(LeadTime);
-    //     END;
-    //   //PRU-VR1.00
-    // END;
+            IF Item.CALCFIELDS(Item."Qty. on Purch. Order") THEN
+                QtyonPurchOrder := Item."Qty. on Purch. Order"
+            ELSE
+                QtyonPurchOrder := 0;
+            IF Item.CALCFIELDS(Item."Qty. on Prod. Order") THEN
+                QtyOnProdOrder := Item."Qty. on Prod. Order"
+            ELSE
+                QtyOnProdOrder := 0;
+            LeadTime := Item."Lead Time Calculation";
+        END
+        ELSE BEGIN
+            SafetyStock := 0;
+            QtyonPurchOrder := 0;
+            QtyOnProdOrder := 0;
+            CLEAR("Purchase Period");
+            CLEAR("Safety Stock Period");
+            CLEAR(LeadTime);
+        END;
+    END;
 
     PROCEDURE CheckCreditLimit_PTPL(VAR ParaSalesHeader: Record "Sales Header");
     VAR
