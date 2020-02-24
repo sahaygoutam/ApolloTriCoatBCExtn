@@ -9,7 +9,7 @@
             "serverInstance": "BC130",
             "tenant": "default",
             "authentication": "Windows",
-            "startupObjectId": 50101,
+            "startupObjectId": 22,
             "startupObjectType": "Page",
             "breakOnError": true
         }
