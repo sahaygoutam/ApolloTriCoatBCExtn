@@ -26,6 +26,11 @@ page 50110 "Posted Issue Slip Card"
                 field("From Location Code"; "From Location Code")
                 {
                     ApplicationArea = All;
+                    trigger OnAssistEdit()
+                    begin
+                        IF AssistEdit1(xRec) THEN
+                            CurrPage.UPDATE;
+                    end;
                 }
                 field("From Location Name"; "From Location Name")
                 {
@@ -81,16 +86,37 @@ page 50110 "Posted Issue Slip Card"
                     RGP.RESET;
                     RGP.SETRANGE("From Location Code", "From Location Code");
                     IF RGP.FINDFIRST THEN
-                        REPORT.RUNMODAL(50005, TRUE, FALSE, RGP);
+                        REPORT.RUNMODAL(50105, TRUE, FALSE, RGP);
                 end;
             }
             action(Dimensions)
             {
+                Image = Dimensions;
+                ShortcutKey = "Shift+Ctrl+D";
+                trigger OnAction()
+                var
+                    IssueSlipvalidate: Codeunit "Issue Slip validate";
+                begin
+                    IssueSlipvalidate.ShowDimensions(Rec);
+                    CurrPage.SAVERECORD;
+                end;
+            }
+            action("Material Req Slip Report")
+            {
+                image = Print;
+                Promoted = true;
+                PromotedIsBig = true;
 
+                trigger OnAction()
+                var
+                    IssueSlipHeader: Record "Issue Slip Header";
+                begin
+                    IssueSlipHeader.RESET;
+                    CurrPage.SETSELECTIONFILTER(IssueSlipHeader);
+                    IF IssueSlipHeader.FINDFIRST THEN
+                        REPORT.RUNMODAL(50127, TRUE, FALSE, IssueSlipHeader);
+                end;
             }
         }
     }
-
-    var
-        myInt: Integer;
 }
