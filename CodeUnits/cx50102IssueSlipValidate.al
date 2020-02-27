@@ -14,6 +14,7 @@ Codeunit 50102 "Issue Slip validate"
         "Purchase Period": DateFormula;
         "Safety Stock Period": DateFormula;
         "Lead Time": DateFormula;
+        NoWorkflowEnabledErr: TextConst ENU = 'This record is not supported by related approval workflow.';
 
     PROCEDURE PostRGPDocument(VAR ParaRGP: Record "Issue Slip Header")
     var
@@ -825,5 +826,26 @@ Codeunit 50102 "Issue Slip validate"
             MESSAGE('Issue Slip Post Successfully');
         END;
     END;
+
+    procedure CheckIndentApprovalsWorkflowEnabled(VAR IndentHeader: Record "Indent Header"): Boolean
+    begin
+        IF NOT IsIndentApprovalsWorkflowEnabled(IndentHeader) THEN
+            ERROR(NoWorkflowEnabledErr);
+        EXIT(TRUE);
+    end;
+
+    procedure IsIndentApprovalsWorkflowEnabled(VAR IndentHeader: Record "Indent Header"): Boolean
+    var
+        WorkflowManagement: Codeunit "Workflow Management";
+        WorkflowEventHandling: Codeunit "Workflow Event Handling";
+    begin
+        EXIT(WorkflowManagement.CanExecuteWorkflow(IndentHeader, RunWorkflowOnSendIndentDocForApprovalCode));
+    end;
+
+    procedure RunWorkflowOnSendIndentDocForApprovalCode(): Code[128]
+    begin
+        EXIT(UPPERCASE('RunWorkflowOnSendIndentDocForApproval'));
+    end;
+
 }
 
