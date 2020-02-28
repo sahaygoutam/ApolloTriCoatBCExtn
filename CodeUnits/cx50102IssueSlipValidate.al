@@ -847,5 +847,10 @@ Codeunit 50102 "Issue Slip validate"
         EXIT(UPPERCASE('RunWorkflowOnSendIndentDocForApproval'));
     end;
 
+    [IntegrationEvent(true, true)]
+    procedure OnSendIndentDocForApproval(VAR IndentHeader: Record "Indent Header")
+    begin
+
+    end;
 }
 

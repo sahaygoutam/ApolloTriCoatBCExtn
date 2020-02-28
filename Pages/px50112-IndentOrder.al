@@ -125,7 +125,7 @@ page 50112 "Indent Order"
                         ERROR('Indent Line is Missing');
                     TESTFIELD("Released Status", "Released Status"::Open);
                     IF IssueSlipValidate.CheckIndentApprovalsWorkflowEnabled(Rec) THEN
-                        ApprovalsMgmt.OnSendIndentDocForApproval(Rec);
+                        IssueSlipValidate.OnSendIndentDocForApproval(Rec);
 
                     CurrPage.UPDATE;
                 end;
