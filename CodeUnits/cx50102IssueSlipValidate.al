@@ -852,5 +852,11 @@ Codeunit 50102 "Issue Slip validate"
     begin
 
     end;
+
+    [IntegrationEvent(true, true)]
+    procedure OnCancelIndentApprovalRequest(VAR IndentHeader: Record "Indent Header")
+    begin
+
+    end;
 }
 

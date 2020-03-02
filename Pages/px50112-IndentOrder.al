@@ -153,7 +153,20 @@ page 50112 "Indent Order"
                     IndentHeader.RESET;
                     IndentHeader.SETRANGE("Indent No.", "Indent No.");
                     IF IndentHeader.FINDFIRST THEN
-                        REPORT.RUNMODAL(50010, TRUE, TRUE, IndentHeader);
+                        REPORT.RUNMODAL(50110, TRUE, TRUE, IndentHeader);
+                end;
+            }
+            action("Cancel Approval Request")
+            {
+                ApplicationArea = all;
+                Promoted = true;
+                PromotedCategory = Process;
+                trigger OnAction()
+                var
+                    IssueSlipValidate: Codeunit "Issue Slip validate";
+                begin
+                    TESTFIELD("Released Status", "Released Status"::"Pending Approval");
+                    IssueSlipValidate.OnCancelIndentApprovalRequest(Rec);
                 end;
             }
         }
