@@ -116,8 +116,6 @@ page 50112 "Indent Order"
                 Promoted = true;
                 PromotedCategory = Process;
                 trigger OnAction()
-                var
-                    IssueSlipValidate: Codeunit "Issue Slip validate";
                 begin
                     IndentLine.RESET;
                     IndentLine.SETRANGE("Document No.", "Indent No.");
@@ -162,13 +160,42 @@ page 50112 "Indent Order"
                 Promoted = true;
                 PromotedCategory = Process;
                 trigger OnAction()
-                var
-                    IssueSlipValidate: Codeunit "Issue Slip validate";
                 begin
                     TESTFIELD("Released Status", "Released Status"::"Pending Approval");
                     IssueSlipValidate.OnCancelIndentApprovalRequest(Rec);
                 end;
             }
+            action("Approve")
+            {
+                ApplicationArea = all;
+                Promoted = true;
+                PromotedCategory = Process;
+                trigger OnAction()
+                begin
+                    ApprovalsMgmt.ApproveRecordApprovalRequest(RECORDID);
+                end;
+            }
+            action("Reject")
+            {
+                ApplicationArea = all;
+                Promoted = true;
+                PromotedCategory = Process;
+                trigger OnAction()
+                begin
+                    ApprovalsMgmt.RejectRecordApprovalRequest(RECORDID);
+                end;
+            }
+            action("Delegate")
+            {
+                ApplicationArea = all;
+                Promoted = true;
+                PromotedCategory = Process;
+                trigger OnAction()
+                begin
+                    ApprovalsMgmt.DelegateRecordApprovalRequest(RECORDID);
+                end;
+            }
+
         }
     }
 
@@ -191,4 +218,72 @@ page 50112 "Indent Order"
         ApprovalsMgmt: Codeunit "Approvals Mgmt.";
         OpenApprovalEntriesExistForCurrUser: Boolean;
         FieldEdit: Boolean;
+        IssueSlipValidate: Codeunit "Issue Slip validate";
+
+    trigger OnOpenPage()
+    begin
+        Usersetup.GET(USERID);
+        FILTERGROUP(2);
+        IF NOT Usersetup."HO Users" THEN
+            SETFILTER("Shortcut Dimension 1 Code", Usersetup."Global Dimension 1 Code");
+        FILTERGROUP(0);
+
+        FILTERGROUP(2);
+        IF "Indent Status" = "Indent Status"::Closed THEN
+            PageEdit := FALSE
+        ELSE
+            PageEdit := TRUE;
+        IF "Released Status" <> "Released Status"::Open THEN
+            PageEdit := FALSE
+        ELSE
+            PageEdit := TRUE;
+        IF "Approval Status" = "Approval Status"::Issued THEN
+            PageEdit := FALSE
+        ELSE
+            PageEdit := TRUE;
+        FILTERGROUP(0);
+
+        IF "Released Status" <> "Released Status"::Open THEN
+            CurrPage.EDITABLE(FALSE);
+    end;
+
+    trigger OnAfterGetRecord()
+    begin
+        IF "Indent Status" = "Indent Status"::Closed THEN
+            PageEdit := FALSE
+        ELSE
+            PageEdit := TRUE;
+        IF "Approval Status" = "Approval Status"::Approved THEN
+            PageEdit := FALSE
+        ELSE
+            PageEdit := TRUE;
+        IF "Approval Status" = "Approval Status"::Issued THEN
+            PageEdit := FALSE
+        ELSE
+            PageEdit := TRUE;
+        OpenApprovalEntriesExistForCurrUser := ApprovalsMgmt.HasOpenApprovalEntriesForCurrentUser(RECORDID);//B2BAPWF1.0 23Feb2017
+
+        IF "Released Status" <> "Released Status"::Open THEN
+            CurrPage.EDITABLE(FALSE);
+    end;
+
+    trigger OnAfterGetCurrRecord()
+    begin
+        IF "Indent Status" = "Indent Status"::Closed THEN
+            CurrPage.EDITABLE(FALSE);
+
+        IF "Released Status" <> "Released Status"::Open THEN
+            CurrPage.EDITABLE(FALSE);
+    end;
+
+    local procedure GetLastLinkNo(): Integer
+    var
+        RL: Record "Record Link";
+    begin
+        RL.RESET;
+        IF RL.FINDLAST THEN
+            EXIT(RL."Link ID" + 1)
+        ELSE
+            EXIT(1);
+    end;
 }
