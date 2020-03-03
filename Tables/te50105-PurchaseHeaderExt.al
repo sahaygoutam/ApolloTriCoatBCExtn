@@ -166,7 +166,6 @@ tableextension 50105 PurchaseHeaderExt extends "Purchase Header"
                 IF ItemLedgerEntry.FINDFIRST THEN
                     REPEAT
                         "Lot No" += ' ' + ItemLedgerEntry."Lot No.";
-                        //MODIFY;
                     UNTIL ItemLedgerEntry.NEXT = 0;
             END;
         END;
