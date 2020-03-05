@@ -142,7 +142,10 @@ tableextension 50105 PurchaseHeaderExt extends "Purchase Header"
                     ERROR(Text16500);
             end;
         }
-
+        field(50121; "Short Close"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 
     var
@@ -268,8 +271,8 @@ tableextension 50105 PurchaseHeaderExt extends "Purchase Header"
         Answer := DIALOG.CONFIRM('Do You Want to Close Order No. %1', FALSE, PeraPH."No.");
 
         IF Answer THEN BEGIN
-            // PeraPH.Status := PeraPH.Status::"Short Close";
-            // PeraPH.MODIFY;
+            PeraPH."Short Close" := true;
+            PeraPH.MODIFY;
             T39_Loc.RESET;
             T39_Loc.SETRANGE("Document No.", PeraPH."No.");
             IF T39_Loc.FINDFIRST THEN
