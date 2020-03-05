@@ -142,10 +142,14 @@ tableextension 50105 PurchaseHeaderExt extends "Purchase Header"
                     ERROR(Text16500);
             end;
         }
+
     }
 
     var
-        myInt: Integer;
+        NameAddressDetails: Text[512];
+        DropShptNameAddressDetails: Text[512];
+        SpecOrderNameAddressDetails: Text[512];
+        CompanyInfo: Record "Company Information";
 
     local procedure SelectBatch()
     var
@@ -186,5 +190,94 @@ tableextension 50105 PurchaseHeaderExt extends "Purchase Header"
         CompanyInfo.GET;
         Trading := CompanyInfo."Trading Co.";
         InitRecord;
+    end;
+
+    local procedure SkipInitialization(): Boolean
+    begin
+        IF "No." = '' THEN
+            EXIT(FALSE);
+
+        IF "Buy-from Vendor No." = '' THEN
+            EXIT(FALSE);
+
+        IF xRec."Document Type" <> "Document Type" THEN
+            EXIT(FALSE);
+
+        IF GETFILTER("Buy-from Vendor No.") <> '' THEN
+            IF GETRANGEMIN("Buy-from Vendor No.") = GETRANGEMAX("Buy-from Vendor No.") THEN
+                IF "Buy-from Vendor No." = GETRANGEMIN("Buy-from Vendor No.") THEN
+                    EXIT(FALSE);
+
+        EXIT(TRUE);
+    end;
+
+    procedure CheckDropShptAddressDetails(SalesHeader: Record "Sales Header"): Boolean
+    var
+        myInt: Integer;
+    begin
+        NameAddressDetails := DropShptNameAddressDetails;
+        DropShptNameAddressDetails :=
+          SalesHeader."Ship-to Name" + SalesHeader."Ship-to Name 2" +
+          SalesHeader."Ship-to Address" + SalesHeader."Ship-to Address 2" +
+          SalesHeader."Ship-to Post Code" + SalesHeader."Ship-to City" +
+          SalesHeader."Ship-to Contact";
+        IF NameAddressDetails = '' THEN
+            NameAddressDetails := DropShptNameAddressDetails;
+
+    end;
+
+    procedure CheckSpecOrderAddressDetails(SalesHeader: Record "Sales Header"): Boolean
+    var
+        LocationCode: Record Location;
+    begin
+        NameAddressDetails := SpecOrderNameAddressDetails;
+        IF LocationCode.GET(SalesHeader."Location Code") THEN
+            SpecOrderNameAddressDetails :=
+              LocationCode.Name + LocationCode."Name 2" +
+              LocationCode.Address + LocationCode."Address 2" +
+              LocationCode."Post Code" + LocationCode.City +
+              LocationCode.Contact
+        ELSE BEGIN
+            CompanyInfo.GET;
+            SpecOrderNameAddressDetails :=
+              CompanyInfo."Ship-to Name" + CompanyInfo."Ship-to Name 2" +
+              CompanyInfo."Ship-to Address" + CompanyInfo."Ship-to Address 2" +
+              CompanyInfo."Ship-to Post Code" + CompanyInfo."Ship-to City" +
+              CompanyInfo."Ship-to Contact";
+        END;
+        IF NameAddressDetails = '' THEN
+            NameAddressDetails := SpecOrderNameAddressDetails;
+        EXIT(NameAddressDetails = SpecOrderNameAddressDetails);
+    end;
+
+    local procedure InitRecOnVendUpdate()
+    begin
+        IF NOT SkipInitialization THEN
+            InitInsert;
+    end;
+
+    procedure ShortClose(var PeraPH: Record "Purchase Header")
+    var
+        PurchaseLine: Record "Purchase Line";
+        T39_Loc: Record "Purchase Line";
+        TextPartial: TextConst ENU = 'Document Short Closed, If require create new order for remaining Qty.';
+        Answer: Boolean;
+    begin
+        PurchaseLine.RESET;
+        PurchaseLine.SETRANGE("Document No.", PeraPH."No.");
+        Answer := DIALOG.CONFIRM('Do You Want to Close Order No. %1', FALSE, PeraPH."No.");
+
+        IF Answer THEN BEGIN
+            // PeraPH.Status := PeraPH.Status::"Short Close";
+            // PeraPH.MODIFY;
+            T39_Loc.RESET;
+            T39_Loc.SETRANGE("Document No.", PeraPH."No.");
+            IF T39_Loc.FINDFIRST THEN
+                REPEAT
+                    T39_Loc."Short Closed" := TRUE;
+                    T39_Loc.MODIFY;
+                UNTIL T39_Loc.NEXT = 0;
+            MESSAGE(TextPartial);
+        END;
     end;
 }
