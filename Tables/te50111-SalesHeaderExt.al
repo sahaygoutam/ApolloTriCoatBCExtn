@@ -147,6 +147,19 @@ tableextension 50111 SalesHeaderExt extends "Sales Header"
         field(50028; "Order Category Type"; Text[50])
         {
             DataClassification = ToBeClassified;
+            trigger OnValidate()
+            var
+                ItemCategoryList: Page "Item Categories";
+                ItemCategory: Record "Item Category";
+            begin
+                ItemCategoryList.LOOKUPMODE(TRUE);
+                ItemCategoryList.SETTABLEVIEW(ItemCategory);
+                IF ItemCategoryList.RUNMODAL = ACTION::LookupOK THEN BEGIN
+                    ItemCategoryList.GETRECORD(ItemCategory);
+                    "Order Category Type" := ItemCategoryList.GetSelectionFilter;
+                    EXIT;
+                END;
+            end;
         }
     }
 }
