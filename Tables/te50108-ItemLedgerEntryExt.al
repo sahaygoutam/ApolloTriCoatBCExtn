@@ -220,7 +220,4 @@ tableextension 50108 ItemLedgerEntryExt extends "Item Ledger Entry"
             Editable = false;
         }
     }
-
-    var
-        myInt: Integer;
 }

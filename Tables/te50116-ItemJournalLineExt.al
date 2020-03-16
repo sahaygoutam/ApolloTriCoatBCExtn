@@ -170,7 +170,4 @@ tableextension 50116 ItemJournalLineExt extends "Item Journal Line"
             DataClassification = ToBeClassified;
         }
     }
-
-    var
-        myInt: Integer;
 }

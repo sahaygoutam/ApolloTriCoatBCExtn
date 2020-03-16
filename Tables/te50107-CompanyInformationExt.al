@@ -23,7 +23,4 @@ tableextension 50107 CompanyInformationExt extends "Company Information"
             DataClassification = ToBeClassified;
         }
     }
-
-    var
-        myInt: Integer;
 }

@@ -2,11 +2,11 @@ tableextension 50110 CustomerExt extends Customer
 {
     fields
     {
-        field(50000; "Credit Days"; DateFormula)
+        field(50100; "Credit Days"; DateFormula)
         {
             DataClassification = ToBeClassified;
         }
-        field(50001; Distributor; Boolean)
+        field(50101; Distributor; Boolean)
         {
             DataClassification = ToBeClassified;
             trigger OnValidate()
@@ -15,7 +15,7 @@ tableextension 50110 CustomerExt extends Customer
                     ERROR('Distributor code for Dealer Customer should be blank');
             end;
         }
-        field(50002; "Distributor Code"; Code[20])
+        field(50102; "Distributor Code"; Code[20])
         {
             DataClassification = ToBeClassified;
             TableRelation = Customer WHERE (Distributor = CONST (true));
@@ -30,29 +30,29 @@ tableextension 50110 CustomerExt extends Customer
                     "Distributor Name" := T18.Name;
             end;
         }
-        field(50003; "Grace Period Date"; Date)
+        field(50103; "Grace Period Date"; Date)
         {
             DataClassification = ToBeClassified;
         }
-        field(50004; "Available PDC Amount"; Decimal)
+        field(50104; "Available PDC Amount"; Decimal)
         {
             FieldClass = FlowField;
             CalcFormula = Sum ("PDC Details".Amount WHERE ("Customer No." = FIELD ("No."), Status = FILTER (false)));
         }
-        field(50005; "Remaining Credit Limit"; Decimal)
+        field(50105; "Remaining Credit Limit"; Decimal)
         {
             DataClassification = ToBeClassified;
             Editable = false;
         }
-        field(50006; "Distributor Name"; Text[50])
+        field(50106; "Distributor Name"; Text[50])
         {
             DataClassification = ToBeClassified;
         }
-        field(50007; "Tolerance %"; Decimal)
+        field(50107; "Tolerance %"; Decimal)
         {
             DataClassification = ToBeClassified;
         }
-        field(50008; "Send SMS"; Boolean)
+        field(50108; "Send SMS"; Boolean)
         {
             DataClassification = ToBeClassified;
         }

@@ -118,7 +118,4 @@ tableextension 50115 GenJournalLineExt extends "Gen. Journal Line"
             end;
         }
     }
-
-    var
-        myInt: Integer;
 }

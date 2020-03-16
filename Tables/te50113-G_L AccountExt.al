@@ -15,7 +15,4 @@ tableextension 50113 G_LAccountExt extends "G/L Account"
             DataClassification = ToBeClassified;
         }
     }
-
-    var
-        myInt: Integer;
 }
