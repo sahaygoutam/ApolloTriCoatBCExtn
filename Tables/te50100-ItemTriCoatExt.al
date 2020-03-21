@@ -88,6 +88,10 @@ tableextension 50100 ItemTriCoatExt extends Item
             OptionCaption = 'Special,IS-1239,IS-3601,IS-4923,IS-1161,IS-3589,IS-9295,IS-4270,ASTMA-500, BS-1387,EN-1021';
             DataClassification = ToBeClassified;
         }
+        field(50118; "Scrap Item"; Boolean)
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 
 }
